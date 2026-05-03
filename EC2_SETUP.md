@@ -15,7 +15,6 @@ sudo apt install -y docker.io docker-compose-plugin git
 sudo usermod -aG docker $USER
 newgrp docker
 
-export VITE_API_URL=http://<EC2_PUBLIC_IP>:9000
 docker compose up -d --build
 ```
 
