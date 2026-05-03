@@ -18,7 +18,7 @@ TaskFlow is a full-stack task and project management app with user authenticatio
 - Auth: JWT + bcrypt password hashing
 - Deployment: Nginx + Uvicorn + systemd (EC2)
 
-## Project structure
+## Project structures
 
 - `frontend/` → React UI and API client
 - `backend/` → FastAPI app, routers, models, schemas, auth
