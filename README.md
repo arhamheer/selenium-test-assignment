@@ -1,4 +1,4 @@
-# TaskFlows
+# TaskFlow
 
 TaskFlow is a full-stack task and project management app with user authentication, role-aware project access, and task assignment workflows.
 
