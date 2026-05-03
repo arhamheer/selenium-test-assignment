@@ -46,4 +46,4 @@ TaskFlow is a full-stack task and project management app with user authenticatio
 
 ## Note
 
-For production, configure environment variables (`DATABASE_URL`, `JWT_SECRET_KEY`) and use HTTPS behind Nginx.
+For production, configure environment variables (`DATABASE_URL`, `JWT_SECRET_KEY`) and use HTTPS behind Nginx
