@@ -230,7 +230,7 @@ def seeded_task(api_session, seeded_project_with_member):
 
 
 def wait_for_element(driver, css_selector: str):
-    return WebDriverWait(driver, SHORT_WAIT).until(
+    return WebDriverWait(driver, WAIT_SECONDS).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, css_selector))
     )
 
