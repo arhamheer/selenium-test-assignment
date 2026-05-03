@@ -3,6 +3,7 @@ pipeline {
 
   triggers {
     githubPush()
+    pollSCM('H/2 * * * *')
   }
 
   options {
@@ -32,8 +33,11 @@ pipeline {
 
     stage('Run Selenium Tests') {
       steps {
+        sh 'mkdir -p reports'
         sh 'docker build -f Dockerfile.selenium-tests -t $TEST_IMAGE .'
-        sh 'docker run --rm --network host -e TASKFLOW_API_URL=http://127.0.0.1:9000 -e TASKFLOW_UI_URL=http://127.0.0.1:5173 -e TASKFLOW_WAIT_SECONDS=30 -e CHROME_BINARY=/usr/bin/chromium -v $WORKSPACE:/workspace -w /workspace --shm-size=2g $TEST_IMAGE'
+        sh 'docker run --rm --network host -e TASKFLOW_API_URL=http://127.0.0.1:9000 -e TASKFLOW_UI_URL=http://127.0.0.1:5173 -e TASKFLOW_WAIT_SECONDS=30 -e CHROME_BINARY=/usr/bin/chromium -v $WORKSPACE:/workspace -w /workspace --shm-size=2g $TEST_IMAGE python3 -m pytest tests/selenium -q --junitxml=reports/selenium-report.xml'
+        junit testResults: 'reports/selenium-report.xml', allowEmptyResults: false
+        archiveArtifacts artifacts: 'reports/selenium-report.xml', fingerprint: true
       }
     }
 
@@ -49,11 +53,15 @@ pipeline {
     always {
       script {
         def pusherEmail = sh(script: "git log -1 --pretty=%ae", returnStdout: true).trim()
-        mail(
-          to: pusherEmail,
-          subject: "TaskFlow Jenkins result: ${currentBuild.currentResult}",
-          body: "Build result: ${currentBuild.currentResult}\nJob: ${env.JOB_NAME}\nBuild: ${env.BUILD_NUMBER}\nURL: ${env.BUILD_URL}"
-        )
+        if (pusherEmail) {
+          mail(
+            to: pusherEmail,
+            subject: "TaskFlow Jenkins result: ${currentBuild.currentResult}",
+            body: "Build result: ${currentBuild.currentResult}\nJob: ${env.JOB_NAME}\nBuild: ${env.BUILD_NUMBER}\nURL: ${env.BUILD_URL}\nTest report: ${env.BUILD_URL}testReport"
+          )
+        } else {
+          echo 'No commit author email found; skipping email notification.'
+        }
       }
     }
   }
