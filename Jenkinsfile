@@ -17,32 +17,12 @@ pipeline {
     COMPOSE_FILE = 'docker-compose.yml'
     POSTGRES_PASSWORD = 'taskflow123'
     JWT_SECRET_KEY = 'secret'
-    DOCKERHUB_USERNAME = 'arhamheer'
   }
 
   stages {
     stage('Checkout') {
       steps {
         checkout scm
-      }
-    }
-
-    stage('Build Backend Image') {
-      steps {
-        sh 'docker build -t ${DOCKERHUB_USERNAME}/taskflow-backend:part1 ./backend'
-      }
-    }
-
-    stage('Build Frontend Image') {
-      steps {
-        sh 'docker build --no-cache --pull --build-arg VITE_API_URL=http://${PUBLIC_IP}:9000 -t ${DOCKERHUB_USERNAME}/taskflow-frontend:part2 ./frontend'
-      }
-    }
-
-    stage('Push Part2 Images') {
-      steps {
-        sh 'docker push ${DOCKERHUB_USERNAME}/taskflow-backend:part1'
-        sh 'docker push ${DOCKERHUB_USERNAME}/taskflow-frontend:part2'
       }
     }
 
