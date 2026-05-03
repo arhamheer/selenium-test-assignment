@@ -89,6 +89,13 @@ def test_create_project_from_dashboard(driver, api_session):
     fill(driver, '[data-testid="project-description-input"]', "Created through the UI")
     click(driver, '[data-testid="project-create-button"]')
     wait_for_element(driver, '[data-testid="dashboard-page"]')
+    WebDriverWait(driver, 8).until(
+        EC.text_to_be_present_in_element(
+            (By.CSS_SELECTOR, '[data-testid="project-list"]'),
+            project_name
+        )
+    )
+    
     assert project_name in wait_for_visible(driver, '[data-testid="project-list"]').text
 
 
@@ -181,6 +188,6 @@ def test_owner_can_delete_task(driver, api_session, seeded_task):
     driver.switch_to.alert.accept()
     
     # Wait for the task card to disappear from the page
-    WebDriverWait(driver, 10).until(
+    WebDriverWait(driver, 8).until(
         EC.invisibility_of_element_located((By.CSS_SELECTOR, f'[data-testid="task-card-{task["id"]}"]'))
     )
