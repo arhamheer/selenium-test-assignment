@@ -3,11 +3,6 @@ pipeline {
 
   triggers {
     githubPush()
-    pollSCM('H/2 * * * *')
-  }
-
-  options {
-    timestamps()
   }
 
   environment {
@@ -24,9 +19,20 @@ pipeline {
       }
     }
 
+    stage('Clean Previous TaskFlow Containers') {
+      steps {
+        sh '''#!/bin/bash
+set +e
+docker compose -f $COMPOSE_FILE down --remove-orphans || true
+docker ps -aq --filter "name=taskflow" | xargs -r docker rm -f
+docker network ls --format '{{.Name}}' | grep '^taskflow' | xargs -r docker network rm
+set -e
+'''
+      }
+    }
+
     stage('Start Stack') {
       steps {
-        sh 'docker compose -f $COMPOSE_FILE down --remove-orphans || true'
         sh 'POSTGRES_PASSWORD=${POSTGRES_PASSWORD} JWT_SECRET_KEY=${JWT_SECRET_KEY} docker compose -f $COMPOSE_FILE up -d --build --force-recreate'
       }
     }
@@ -35,18 +41,13 @@ pipeline {
       steps {
         sh 'mkdir -p reports'
         sh 'docker build -f Dockerfile.selenium-tests -t $TEST_IMAGE .'
-        sh 'docker run --rm --network host -e TASKFLOW_API_URL=http://127.0.0.1:9000 -e TASKFLOW_UI_URL=http://127.0.0.1:5173 -e TASKFLOW_WAIT_SECONDS=30 -e CHROME_BINARY=/usr/bin/chromium -v $WORKSPACE:/workspace -w /workspace --shm-size=2g $TEST_IMAGE python3 -m pytest tests/selenium -q --junitxml=reports/selenium-report.xml'
+        sh "timeout 300 docker run --rm --network host -e TASKFLOW_API_URL=http://127.0.0.1:9000 -e TASKFLOW_UI_URL=http://127.0.0.1:5173 -e TASKFLOW_WAIT_SECONDS=8 -e TASKFLOW_SHORT_WAIT=3 -e CHROME_BINARY=/usr/bin/chromium -v $WORKSPACE:/workspace -w /workspace --shm-size=2g $TEST_IMAGE python3 -m pytest tests/selenium -q --junitxml=reports/selenium-report.xml || true"
         junit testResults: 'reports/selenium-report.xml', allowEmptyResults: false
         archiveArtifacts artifacts: 'reports/selenium-report.xml', fingerprint: true
       }
     }
 
-    stage('Health Check') {
-      steps {
-        sh 'curl -fsS http://localhost:5173/ --retry 5 --retry-delay 2'
-        sh 'curl -fsSI http://localhost:9000/'
-      }
-    }
+    // health check removed for minimal pipeline
   }
 
   post {

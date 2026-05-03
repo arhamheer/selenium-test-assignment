@@ -14,7 +14,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 API_BASE = os.getenv("TASKFLOW_API_URL", "http://127.0.0.1:8000")
 UI_BASE = os.getenv("TASKFLOW_UI_URL", "http://127.0.0.1:5173")
 DEFAULT_PASSWORD = os.getenv("TASKFLOW_TEST_PASSWORD", "Password123!")
-WAIT_SECONDS = int(os.getenv("TASKFLOW_WAIT_SECONDS", "20"))
+# Overall wait budget for slower operations (can be overridden via env)
+WAIT_SECONDS = int(os.getenv("TASKFLOW_WAIT_SECONDS", "8"))
+# Shorter wait for UI interactions and element polling
+SHORT_WAIT = int(os.getenv("TASKFLOW_SHORT_WAIT", "3"))
 
 OWNER = {
     "name": "Selenium Owner",
@@ -45,7 +48,7 @@ def wait_for_api(session: requests.Session):
                 return
         except requests.RequestException:
             pass
-        time.sleep(1)
+        time.sleep(0.5)
     raise RuntimeError(f"TaskFlow API is not reachable at {API_BASE}")
 
 
@@ -179,7 +182,7 @@ def reset_browser(driver):
     driver.delete_all_cookies()
     driver.execute_script("window.localStorage.clear(); window.sessionStorage.clear();")
     driver.get(UI_BASE)
-    WebDriverWait(driver, WAIT_SECONDS).until(
+    WebDriverWait(driver, SHORT_WAIT).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, '[data-testid="login-page"]'))
     )
 
@@ -227,13 +230,13 @@ def seeded_task(api_session, seeded_project_with_member):
 
 
 def wait_for_element(driver, css_selector: str):
-    return WebDriverWait(driver, WAIT_SECONDS).until(
+    return WebDriverWait(driver, SHORT_WAIT).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, css_selector))
     )
 
 
 def wait_for_visible(driver, css_selector: str):
-    return WebDriverWait(driver, WAIT_SECONDS).until(
+    return WebDriverWait(driver, SHORT_WAIT).until(
         EC.visibility_of_element_located((By.CSS_SELECTOR, css_selector))
     )
 
@@ -281,10 +284,10 @@ def safe_select_dropdown(driver, select_selector: str, option_text: str = None, 
             
             # Click to open dropdown and trigger option loading
             select_element.click()
-            time.sleep(0.3)  # Brief pause for dropdown to render
-            
-            # Wait for options to be present in DOM
-            WebDriverWait(driver, WAIT_SECONDS).until(
+            time.sleep(0.15)  # very brief pause for dropdown to render
+
+            # Wait for options to be present in DOM (short wait)
+            WebDriverWait(driver, SHORT_WAIT).until(
                 lambda d: len(d.find_elements(By.CSS_SELECTOR, f'{select_selector} option')) > 1
             )
             
@@ -298,4 +301,4 @@ def safe_select_dropdown(driver, select_selector: str, option_text: str = None, 
         except Exception as e:
             if attempt == max_retries - 1:
                 raise  # Last attempt, re-raise the exception
-            time.sleep(0.5)  # Wait before retry
+            time.sleep(0.25)  # shorter wait before retry
