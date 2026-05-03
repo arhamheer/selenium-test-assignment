@@ -1,0 +1,16 @@
+.git
+.github
+backend/venv
+backend/.venv
+backend/__pycache__
+frontend/node_modules
+frontend/dist
+tests/__pycache__
+tests/selenium/__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.venv
+node_modules
+dist
