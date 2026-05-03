@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:9000";
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
@@ -71,7 +71,7 @@ export const addProjectMember = async (projectId, userId) => {
     {
       method: "POST",
       headers: getAuthHeaders(),
-    }
+    },
   );
   if (!response.ok) throw new Error("Failed to add member");
   return response.json();
@@ -83,7 +83,7 @@ export const removeProjectMember = async (projectId, userId) => {
     {
       method: "DELETE",
       headers: getAuthHeaders(),
-    }
+    },
   );
   if (!response.ok) throw new Error("Failed to remove member");
   return response.json();
