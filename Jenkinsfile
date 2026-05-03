@@ -43,28 +43,60 @@ pipeline {
   }
 
   post {
-    always {
-      sh 'docker compose -f $COMPOSE_FILE down --remove-orphans || true'
+  always {
+    sh 'docker compose -f $COMPOSE_FILE down --remove-orphans || true'
+    
+    script {
+      def pusherEmail = sh(script: "git log -1 --pretty=%ae", returnStdout: true).trim()
+      def committerName = sh(script: "git log -1 --pretty=%an", returnStdout: true).trim()
       
-      script {
-        def pusherEmail = sh(script: "git log -1 --pretty=%ae", returnStdout: true).trim()
-        if (pusherEmail?.contains("@")) {
-          emailext(
-            to: pusherEmail,
-            subject: "TaskFlow Jenkins: ${currentBuild.currentResult}",
-            body: """
-              Build Result: ${currentBuild.currentResult}
-              Job: ${env.JOB_NAME}
-              Build: ${env.BUILD_NUMBER}
-              URL: ${env.BUILD_URL}
-              Test Report: ${env.BUILD_URL}testReport
-            """,
-            attachLog: true
-          )
-        } else {
-          echo "No valid pusher email found"
+      // Read test output if available
+      def testOutput = "No detailed test output available."
+      if (fileExists('reports/test-output.txt')) {
+        testOutput = readFile('reports/test-output.txt')
+        if (testOutput.length() > 5000) {
+          testOutput = testOutput.take(5000) + "\n\n... [output truncated]"
         }
+      }
+      
+      // Validate email
+      def isValidEmail = pusherEmail?.contains("@") \
+        && !pusherEmail.contains("example.com") \
+        && !pusherEmail.contains("test.com") \
+        && pusherEmail.contains(".")
+      
+      if (isValidEmail) {
+        emailext(
+          to: pusherEmail,
+          subject: "TaskFlow CI: ${currentBuild.currentResult} | Build #${env.BUILD_NUMBER}",
+          body: """
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TaskFlow CI/CD Test Report
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Build:      ${env.JOB_NAME} #${env.BUILD_NUMBER}
+Status:     ${currentBuild.currentResult}
+Commit:     ${sh(script: 'git log -1 --pretty=%h -s', returnStdout: true).trim()}
+Author:     ${committerName} <${pusherEmail}>
+Timestamp:  ${new Date().format('yyyy-MM-dd HH:mm:ss')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TEST RESULTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${testOutput}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Note: Full Jenkins console requires login.
+This email contains the complete test report.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          """,
+          attachLog: true
+        )
+      } else {
+        echo "Skipping email to invalid address: '${pusherEmail}'"
       }
     }
   }
+}
 }
