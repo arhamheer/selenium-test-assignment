@@ -12,7 +12,7 @@ TaskFlow is a full-stack task and project management app with user authenticatio
 
 ## Tech stack
 
-- Frontend: React + Vite + Tailwind CSS
+- Frontend: React + Vite + Tailwind Css
 - Backend: FastAPI + SQLAlchemy
 - Database: PostgreSQL
 - Auth: JWT + bcrypt password hashing
