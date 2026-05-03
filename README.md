@@ -10,7 +10,7 @@ TaskFlow is a full-stack task and project management app with user authenticatio
 - Create, update, and delete tasks inside projects.
 - Enforce access control (owner/member rules) at API level.
 
-## Tech-stack
+## Tech stack
 
 - Frontend: React + Vite + Tailwind CSS
 - Backend: FastAPI + SQLAlchemy
